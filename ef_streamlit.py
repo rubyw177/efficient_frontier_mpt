@@ -350,7 +350,7 @@ def plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate=0.0, constr
 def get_correlation(price_data, color_scale='BrBG_r', title="Correlation Matrix"):
     """
     Calculate and plot the correlation matrix as an interactive heatmap for a given price data DataFrame,
-    with adaptive font size.
+    with adaptive font and height size.
 
     Parameters:
         price_data (DataFrame): Historical price data.
@@ -374,13 +374,16 @@ def get_correlation(price_data, color_scale='BrBG_r', title="Correlation Matrix"
         # Get the number of assets (tickers)
         num_assets = len(corr_matrix.columns)
 
-        # Change font size based on the number of assets
+        # Change font and height size based on the number of assets
         if num_assets >= 10:
             font_size = 7
+            height_size = 700
         elif num_assets > 5 and num_assets < 10:
             font_size = 9
+            height_size = 600
         else:
             font_size = 11
+            height_size = 500
 
         # Create the heatmap using Plotly Express
         fig = px.imshow(
@@ -400,7 +403,7 @@ def get_correlation(price_data, color_scale='BrBG_r', title="Correlation Matrix"
                 tickfont=dict(size=font_size)
             ),
             autosize=True,
-            height=500,
+            height=height_size,
             margin=dict(l=10, r=10, t=50, b=10),
         )
 
@@ -412,7 +415,6 @@ def get_correlation(price_data, color_scale='BrBG_r', title="Correlation Matrix"
 
         # Display the figure in Streamlit with full width
         st.plotly_chart(fig, use_container_width=True)
-
     return fig
 
 def get_asset_metrics(price_data, risk_free_rate=0.0, trading_days=365):
