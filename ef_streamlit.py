@@ -413,7 +413,7 @@ def get_asset_metrics(price_data, risk_free_rate=0.0, trading_days=365):
     daily_std = returns.std()
 
     # Calculate annual return and annual volatility
-    annual_return = mean_returns * trading_days
+    annual_return = (1 + mean_returns) ** trading_days - 1
     annual_std = daily_std * np.sqrt(trading_days)
 
     # Calculate sharpe ratio
