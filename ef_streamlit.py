@@ -476,7 +476,7 @@ with st.sidebar:
     st.write("")
     tickers = st.text_input(
         "Enter Stock/Crypto Tickers (comma-separated)",
-        value="SPY, REIT, GOVT, BBCA.JK, BTC-USD",
+        value="SPY, GOVT, BBCA.JK, NVDA, BTC-USD",
         help="Example: SPY, AAPL, BTC-USD. Check **Yahoo Finance** for ticker symbols."
     )
     ticker_list = [t.strip() for t in tickers.split(',')]
