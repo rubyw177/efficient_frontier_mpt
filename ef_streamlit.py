@@ -422,8 +422,8 @@ def get_asset_metrics(price_data, risk_free_rate=0.0, trading_days=365):
 
     # Create a DataFrame with the metrics
     metrics_df = pd.DataFrame({
-        "Annualized Return": round(annual_return*100, 2),
-        "Annualized Volatility": round(annual_std*100, 2),
+        "Annualized Return (%)": round(annual_return*100, 2),
+        "Annualized Volatility (%)": round(annual_std*100, 2),
         "Sharpe Ratio": round(sharpe_ratio, 3)
     })
     
