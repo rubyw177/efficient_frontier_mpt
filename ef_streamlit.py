@@ -350,15 +350,15 @@ def plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate=0.0, constr
 def get_correlation(price_data, color_scale='BrBG_r', title="Correlation Matrix"):
     """
     Calculate and plot the correlation matrix as an interactive heatmap for a given price data DataFrame,
-    and display it in Streamlit.
-    
+    with adaptive font size for both desktop and mobile.
+
     Parameters:
         price_data (DataFrame): Historical price data.
-        color_scale (str): The color scale to use for the heatmap (default 'RdBu_r').
+        color_scale (str): The color scale to use for the heatmap (default 'BrBG_r').
         title (str): The title for the heatmap (default "Asset Correlation Matrix").
-    
+
     Returns:
-        Figure: The Plotly figure object (if needed for further use).
+        Figure: The Plotly figure object.
     """
     with st.spinner("Getting Asset Correlation..."):
         if price_data is None or price_data.empty:
@@ -367,30 +367,59 @@ def get_correlation(price_data, color_scale='BrBG_r', title="Correlation Matrix"
 
         # Calculate daily percentage returns and drop missing values
         returns = price_data.pct_change().dropna()
-        
+
         # Compute the correlation matrix
         corr_matrix = returns.corr()
-        
-        # Create an interactive heatmap using Plotly Express
+
+        # Get the number of assets (tickers)
+        num_assets = len(corr_matrix.columns)
+
+        # **Dynamically Adjust Font Sizes for Different Devices**
+        if num_assets <= 5:
+            text_font_size = 16  # Large for small matrices (PC)
+            axis_font_size = 14
+        elif num_assets <= 10:
+            text_font_size = 12  # Medium for moderate size
+            axis_font_size = 12
+        else:
+            text_font_size = 10  # Small for large matrices (Mobile)
+            axis_font_size = 10
+
+        # Dynamically set figure height based on matrix size
+        fig_height = max(400, min(700, num_assets * 40))
+
+        # Create the heatmap using Plotly Express
         fig = px.imshow(
             corr_matrix,
-            text_auto=".3f",
+            text_auto=".2f",  # Auto-adjusted text inside cells
             color_continuous_scale=color_scale,
-            title=title,
-        )
-        
-        # Update layout for clarity
-        fig.update_layout(
-            xaxis_title="Ticker",
-            yaxis_title="Ticker",
-            autosize=True,
-            height=500
+            title=title
         )
 
-        fig.update_traces(textfont_size=18)
-        
-        # Display the figure in Streamlit
+        # **Ensure Responsiveness**
+        fig.update_layout(
+            xaxis=dict(
+                tickangle=-45,  # Rotate x-axis labels for better readability
+                tickfont=dict(size=axis_font_size)
+            ),
+            yaxis=dict(
+                tickfont=dict(size=axis_font_size)
+            ),
+            autosize=True,
+            height=fig_height,
+            margin=dict(l=10, r=10, t=50, b=10),
+            font=dict(size=axis_font_size)  # Adjust global font size
+        )
+
+        # Ensure text inside the matrix adjusts properly
+        fig.update_traces(
+            textfont_size=text_font_size,
+            hoverinfo="text"  # Full value on hover
+        )
+
+        # Display the figure in Streamlit with full width
         st.plotly_chart(fig, use_container_width=True)
+
     return fig
 
 def get_asset_metrics(price_data, risk_free_rate=0.0, trading_days=365):
