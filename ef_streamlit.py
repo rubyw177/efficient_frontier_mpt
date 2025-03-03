@@ -383,8 +383,8 @@ def get_correlation(price_data, color_scale='BrBG_r', title="Correlation Matrix"
         fig.update_layout(
             xaxis_title="Ticker",
             yaxis_title="Ticker",
-            width=1000,
-            height=700
+            autosize=True,
+            height=500
         )
 
         fig.update_traces(textfont_size=18)
