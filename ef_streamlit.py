@@ -535,6 +535,9 @@ if st.button("Run Portfolio Analysis 🔍"):
                 st.markdown("##### Maximum Sharpe Ratio Portfolio")
                 st.metric("Expected Return", f"{results['maxSR']['return_disp']:.2f}%")
                 st.metric("Volatility", f"{results['maxSR']['std_disp']:.2f}%")
+                st.metric(
+                    "Expected Return Fluctuation Range", 
+                    f"{(results['maxSR']['return_disp'] - results['maxSR']['std_disp']):.2f}% ~ {(results['maxSR']['return_disp'] + results['maxSR']['std_disp']):.2f}%")
                 st.write("**Allocations:**")
                 alloc_df = pd.DataFrame({
                     'Ticker': mean_returns.index,
@@ -545,6 +548,9 @@ if st.button("Run Portfolio Analysis 🔍"):
                 st.markdown("##### Minimum Variance Portfolio")
                 st.metric("Expected Return", f"{results['minVar']['return_disp']:.2f}%")
                 st.metric("Volatility", f"{results['minVar']['std_disp']:.2f}%")
+                st.metric(
+                    "Expected Return Fluctuation Range ", 
+                    f"{(results['minVar']['return_disp'] - results['minVar']['std_disp']):.2f}% ~ {(results['minVar']['return_disp'] + results['minVar']['std_disp']):.2f}%")
                 st.write("**Allocations:**")
                 alloc_df = pd.DataFrame({
                     'Ticker': mean_returns.index,
