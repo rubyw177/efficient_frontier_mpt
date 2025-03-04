@@ -453,6 +453,68 @@ def get_asset_metrics(price_data, risk_free_rate=0.0, trading_days=365):
     
     return metrics_df
 
+def plot_portfolio(tickers, weights):
+    """
+    Generate and display an interactive pie chart of portfolio allocations.
+    
+    Parameters:
+        tickers (list or pd.Series): Asset symbols.
+        weights (list or pd.Series of float): Allocation percentages in decimal form (e.g., 0.20 for 20%).
+        
+    Displays:
+        A Plotly pie chart in Streamlit with proper formatting and error handling.
+    """
+    
+    # Validate input
+    if tickers is None or weights is None or len(tickers) == 0 or len(weights) == 0:
+        st.error("Invalid allocation data - missing or empty values.")
+        return
+    
+    # Create a DataFrame from the provided tickers and weights
+    alloc_df = pd.DataFrame({
+        'Ticker': tickers,
+        'Weight': [round(w*100, 2) for w in weights]
+    })
+    
+    # Convert decimal weights to a percentage display in hover info
+    # (Plotly handles actual values in numeric form, so keep "Weight" numeric.)
+    fig = px.pie(
+        data_frame=alloc_df,
+        values="Weight",
+        names="Ticker",
+        title=f"Portfolio Allocation ({len(alloc_df[alloc_df['Weight'] != 0])} Assets)",
+        hole=0.3,  # Donut chart style
+        color_discrete_sequence=px.colors.qualitative.Pastel,
+        hover_data={"Weight": ":.1f%"},
+        labels={"Weight": "Allocation"}
+    )
+    
+    # Format layout for clarity
+    fig.update_layout(
+        uniformtext_minsize=12,
+        uniformtext_mode='hide',
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(l=40, r=40, t=20, b=20)
+    )
+    
+    # Add percentage labels inside slices
+    fig.update_traces(
+        textposition="inside",
+        textinfo="percent+label",
+        rotation=45,  # Rotate to help with label overlap
+        sort=True     # Sort slices by size
+    )
+    
+    # Display the chart in Streamlit
+    st.write("")
+    st.plotly_chart(fig, use_container_width=True, theme="streamlit")
+
 # -------------------------------
 # Streamlit UI
 # -------------------------------
@@ -526,6 +588,7 @@ if st.button("Run Portfolio Analysis 🔍"):
             st.subheader("Optimization Results")
             st.write("")
             col1, col2 = st.columns(2)
+
             with col1:
                 st.markdown("##### Maximum Sharpe Ratio Portfolio")
                 st.metric("Expected Return", f"{results['maxSR']['return_disp']:.2f}%")
@@ -533,12 +596,15 @@ if st.button("Run Portfolio Analysis 🔍"):
                 st.metric(
                     "Expected Return Fluctuation Range", 
                     f"{(results['maxSR']['return_disp'] - results['maxSR']['std_disp']):.2f}% ~ {(results['maxSR']['return_disp'] + results['maxSR']['std_disp']):.2f}%")
+                st.write("")
                 st.write("**Allocations:**")
                 alloc_df = pd.DataFrame({
                     'Ticker': mean_returns.index,
                     'Weight': [f"{w:.1%}" for w in results['maxSR']['allocation']["Weightings"]]
                 })
                 st.dataframe(alloc_df, hide_index=True)
+                plot_portfolio(alloc_df['Ticker'], results['maxSR']['allocation']["Weightings"])\
+                
             with col2:
                 st.markdown("##### Minimum Variance Portfolio")
                 st.metric("Expected Return", f"{results['minVar']['return_disp']:.2f}%")
@@ -546,12 +612,14 @@ if st.button("Run Portfolio Analysis 🔍"):
                 st.metric(
                     "Expected Return Fluctuation Range ", 
                     f"{(results['minVar']['return_disp'] - results['minVar']['std_disp']):.2f}% ~ {(results['minVar']['return_disp'] + results['minVar']['std_disp']):.2f}%")
+                st.write("")
                 st.write("**Allocations:**")
                 alloc_df = pd.DataFrame({
                     'Ticker': mean_returns.index,
                     'Weight': [f"{w:.1%}" for w in results['minVar']['allocation']["Weightings"]]
                 })
                 st.dataframe(alloc_df, hide_index=True)
+                plot_portfolio(alloc_df['Ticker'], results['minVar']['allocation']["Weightings"])
             
             # Plot efficient frontier
             st.write("")
