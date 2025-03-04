@@ -590,7 +590,7 @@ if st.button("Run Portfolio Analysis 🔍"):
             col1, col2 = st.columns(2)
 
             with col1:
-                st.markdown("##### Maximum Sharpe Ratio Portfolio")
+                st.markdown("##### Maximum Sharpe Ratio Portfolio (Highest Return/Risk Ratio)")
                 st.metric("Expected Return", f"{results['maxSR']['return_disp']:.2f}%")
                 st.metric("Volatility", f"{results['maxSR']['std_disp']:.2f}%")
                 st.metric(
@@ -606,7 +606,7 @@ if st.button("Run Portfolio Analysis 🔍"):
                 plot_portfolio(alloc_df['Ticker'], results['maxSR']['allocation']["Weightings"])\
                 
             with col2:
-                st.markdown("##### Minimum Variance Portfolio")
+                st.markdown("##### Minimum Variance Portfolio (Lowest Volatility)")
                 st.metric("Expected Return", f"{results['minVar']['return_disp']:.2f}%")
                 st.metric("Volatility", f"{results['minVar']['std_disp']:.2f}%")
                 st.metric(
