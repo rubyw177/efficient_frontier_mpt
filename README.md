@@ -5,27 +5,48 @@ A simple toolkit for Modern Portfolio Theory (MPT) that demonstrates how to:
 - Retrieve asset price data from Yahoo Finance.
 - Calculate key metrics (returns, volatility, Sharpe ratio).
 - Optimize portfolios for maximum Sharpe ratio or minimum variance.
-- Visualize the Efficient Frontier in an interactive Plotly chart.
+- Plot the Efficient Frontier interactively with Plotly.
+- Dynamically select a portfolio along the efficient frontier using an interactive slider.
 - Inspect correlations among assets.
+- Manage expensive computations with caching and session state so that updates occur only when the user explicitly clicks **Run Portfolio Analysis**.
 
 This project uses Python, Streamlit, and Plotly to provide a user-friendly web application for portfolio optimization.
 
 ## Features
 
 ### Automatic Data Retrieval
-- Fetches historical data for user-specified tickers using yfinance.
+- **Yahoo Finance Integration:**  
+  Automatically downloads historical data for user-specified tickers using `yfinance`.
 
 ### Portfolio Optimization
+- **Max Sharpe Ratio:**  
+  Find the portfolio weights that maximize risk-adjusted returns by minimizing the negative Sharpe ratio.
+- **Min Variance:**  
+  Determine the portfolio with the lowest volatility.
+- **Efficient Frontier:**  
+  Generate a range of portfolios with varying target returns, each optimized to minimize variance.
 
-- **Max Sharpe Ratio**: Find the portfolio weights that maximize risk-adjusted returns.
-- **Min Variance**: Find the portfolio weights that minimize overall volatility.
-- **Efficient Frontier**: Plot a range of portfolios with varying target returns and minimized variance.
+### Interactive Portfolio Selection
+- **Efficient Frontier Slider:**  
+  Use an interactive slider to select a target return along the efficient frontier. The app updates the portfolio’s weights, expected return, risk (volatility), and even highlights the selected portfolio on the efficient frontier plot.
 
-### Correlation Matrix
-- Visualize the correlation between assets in a heatmap.
+### Visualization
+- **Efficient Frontier Plot:**  
+  The Plotly chart displays the efficient frontier curve along with markers for the Maximum Sharpe Ratio and Minimum Variance portfolios. A dynamically updated marker shows the user-selected portfolio.
+- **Correlation Matrix:**  
+  An interactive heatmap displays correlations among assets.
+- **Asset Metrics:**  
+  View annualized return, volatility, and Sharpe ratio for each asset in a table.
+- **Portfolio Allocation:**  
+  An interactive pie chart shows portfolio allocations.
 
-### Asset Metrics
-- View annualized return, volatility, and Sharpe ratio for each individual asset.
+### Smart Re-Calculation with Session State
+- **User-Controlled Updates:**  
+  Heavy computations (data retrieval, optimization) run only when the user clicks **Run Portfolio Analysis**.
+- **Sidebar Change Detection:**  
+  Although sidebar changes trigger a re-run of the script (Streamlit’s default behavior), caching and session state ensure that expensive operations are only re-computed when the user explicitly requests it.
+- **Efficient Updates:**  
+  Once the analysis is “locked in” by the run button, only the slider (and related lightweight updates) re-run the optimization for the selected portfolio.
 
 ## Getting Started
 
@@ -77,9 +98,11 @@ Open your web browser and go to the URL printed in the terminal (usually http://
 3. Click **Run Portfolio Analysis** to see results:
    - Maximum Sharpe Ratio portfolio
    - Minimum Variance portfolio
+   - Selected efficient frontier portfolio
    - Efficient Frontier chart
    - Correlation Matrix among the assets
    - Asset Metrics table
+4. Use the interactive slider to choose a target return along the efficient frontier. The app updates the portfolio weights, expected return, volatility, and marks the selected point on the efficient frontier plot.
 
 ## Files
 
@@ -122,10 +145,19 @@ We use `scipy.optimize.minimize` to maximize the Sharpe ratio (equivalently, min
 #### Efficient Frontier
 - For target returns from the min to max, finds the portfolio with the smallest variance.
 
+### Interactive Updates with Session State
+- Lock-In Analysis:
+When the user clicks Run Portfolio Analysis, heavy computations are executed once and stored in `st.session_state`.
+- Sidebar Change Detection:
+A helper function compares current sidebar inputs with stored values. If changes are detected, a message prompts the user to click the run button again to update the analysis.
+- Slider-Driven Updates:
+The efficient frontier slider triggers only a re-optimization for the selected target return without re-running the entire analysis.
+
 ### Visualization
 
 Plotly is used to:
 - Display the Efficient Frontier.
+- Display portfolio allocation pie chart.
 - Mark the Max Sharpe and Min Variance points.
 - Create a correlation heatmap of the assets.
 
@@ -157,7 +189,6 @@ This application is for educational and informational purposes only. It does not
 MIT License.
 
 ## Acknowledgments
-
 - Streamlit for the easy-to-build data app framework.
 - yfinance for quick stock/crypto data retrieval.
 - Plotly for interactive data visualizations.
