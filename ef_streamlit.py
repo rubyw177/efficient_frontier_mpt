@@ -288,13 +288,14 @@ def calculated_result(mean_returns, cov_matrix, risk_free_rate=0.0, constraints_
         "target_returns": target_returns
     }
 
-def plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate=0.0, constraints_set=(0, 1), trading_days=365):
+def plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate=0.0, constraints_set=(0, 1), trading_days=365, selected_point=None):
     """
     Create an interactive Plotly visualization of the efficient frontier,
-    maximum Sharpe ratio, and minimum variance portfolios.
+    maximum Sharpe ratio portfolio, minimum variance portfolio, and selected point portfolio.
     """
     results = calculated_result(mean_returns, cov_matrix, risk_free_rate, constraints_set, trading_days)
-    
+    data = []
+
     # Maximum Sharpe Ratio point
     maxSR_plot = go.Scatter(
         name="Max Sharpe Ratio",
@@ -303,6 +304,7 @@ def plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate=0.0, constr
         y=[round(results["maxSR"]["return_ori"] * 100, 2)],
         marker=dict(color="#8883f0", size=18)
     )
+    data.append(maxSR_plot)
     
     # Minimum Variance point
     minVar_plot = go.Scatter(
@@ -312,6 +314,19 @@ def plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate=0.0, constr
         y=[round(results["minVar"]["return_ori"] * 100, 2)],
         marker=dict(color="#f39530", size=18)
     )
+    data.append(minVar_plot)
+
+    if selected_point is not None:
+        selected_return = selected_point['return']
+        selected_std = selected_point['risk']
+        selected_plot = go.Scatter(
+            name="Selected Point",
+            mode="markers",
+            x=[selected_std],
+            y=[selected_return],
+            marker=dict(color="#bd2d3c", size=18)
+        )
+        data.append(selected_plot)
     
     # Efficient frontier curve
     # Convert volatilities and target returns to percentages
@@ -324,8 +339,8 @@ def plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate=0.0, constr
         y=eff_ret,
         line=dict(color="#75badb", width=3, dash="dot")
     )
-    
-    data = [maxSR_plot, minVar_plot, eff_curve]
+    data.append(eff_curve)
+
     layout = go.Layout(
         title="Portfolio Optimization with Efficient Frontier",
         xaxis=dict(title="Annualized Volatility (%)"),
@@ -515,6 +530,24 @@ def plot_portfolio(tickers, weights):
     st.write("")
     st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
+def sidebar_changed(tickers, start_date, end_date, risk_free_rate):
+    # Create a dictionary with current sidebar values.
+    current_params = {
+        "tickers": tickers,
+        "start_date": str(start_date),
+        "end_date": str(end_date),
+        "risk_free_rate": risk_free_rate
+    }
+    # If these values haven’t been stored before, save them.
+    if "sidebar_params" not in st.session_state:
+        st.session_state.sidebar_params = current_params
+        return True  # first run, consider it a change
+    # Compare the stored parameters with the current ones.
+    if st.session_state.sidebar_params != current_params:
+        st.session_state.sidebar_params = current_params  # update the stored values
+        return True
+    return False
+
 # -------------------------------
 # Streamlit UI
 # -------------------------------
@@ -581,80 +614,157 @@ if st.button("Run Portfolio Analysis 🔍"):
         if returns is not None:
             mean_returns, cov_matrix = returns
             results = calculated_result(mean_returns, cov_matrix, risk_free_rate, constraints_set)
-            
-            # Display optimization results
-            st.write("")
-            st.write("")
-            st.subheader("Optimization Results")
-            st.write("")
-            col1, col2 = st.columns(2)
 
-            with col1:
-                st.markdown("##### Maximum Sharpe Ratio Portfolio (Highest Return/Risk Ratio)")
-                st.metric("Expected Return", f"{results['maxSR']['return_disp']:.2f}%")
-                st.metric("Volatility", f"{results['maxSR']['std_disp']:.2f}%")
-                st.metric(
-                    "Expected Return Fluctuation Range", 
-                    f"{(results['maxSR']['return_disp'] - results['maxSR']['std_disp']):.2f}% ~ {(results['maxSR']['return_disp'] + results['maxSR']['std_disp']):.2f}%")
-                st.write("")
-                st.write("**Allocations:**")
-                alloc_df = pd.DataFrame({
-                    'Ticker': mean_returns.index,
-                    'Weight': [f"{w:.1%}" for w in results['maxSR']['allocation']["Weightings"]]
-                })
-                st.dataframe(alloc_df, hide_index=True)
-                plot_portfolio(alloc_df['Ticker'], results['maxSR']['allocation']["Weightings"])\
-                
-            with col2:
-                st.markdown("##### Minimum Variance Portfolio (Lowest Volatility)")
-                st.metric("Expected Return", f"{results['minVar']['return_disp']:.2f}%")
-                st.metric("Volatility", f"{results['minVar']['std_disp']:.2f}%")
-                st.metric(
-                    "Expected Return Fluctuation Range ", 
-                    f"{(results['minVar']['return_disp'] - results['minVar']['std_disp']):.2f}% ~ {(results['minVar']['return_disp'] + results['minVar']['std_disp']):.2f}%")
-                st.write("")
-                st.write("**Allocations:**")
-                alloc_df = pd.DataFrame({
-                    'Ticker': mean_returns.index,
-                    'Weight': [f"{w:.1%}" for w in results['minVar']['allocation']["Weightings"]]
-                })
-                st.dataframe(alloc_df, hide_index=True)
-                plot_portfolio(alloc_df['Ticker'], results['minVar']['allocation']["Weightings"])
-            
-            # Plot efficient frontier
-            st.write("")
-            st.subheader("Efficient Frontier")
-            plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate, constraints_set)
-
-            # Define custom color scale for correlation matrix
-            custom_colorscale = [
-                [0.0, "#f1b3a1"], 
-                [0.5, "#e6e6e6"],  
-                [1.0, "#a6c9e7"]   
-            ]
-
-            # Plot asset correlation matrix
-            st.write("")
-            st.subheader("Asset Correlation Matrix")
-            get_correlation(price_data, color_scale=custom_colorscale)
-
-            # Show asset metrics
-            st.write("")
-            st.subheader("Asset Metrics")
-            metrics_df = get_asset_metrics(price_data, risk_free_rate=risk_free_rate, trading_days=365)
-            st.dataframe(metrics_df)
-
-            # Disclaimer warning
-            st.write("")
-            st.write("")
-            st.warning(
-                "**Disclaimer:** The results shown in this application are based on **historical data** and are intended for "
-                "informational purposes only. The **expected returns** are calculated using past performance, but **future performance** "
-                "may differ significantly. Market conditions, economic factors, and unforeseen events can impact actual returns. "
-                "Please consider this before making any investment decisions."
-            )
-
+            # Save computed data in session_state
+            st.session_state['price_data'] = price_data
+            st.session_state['mean_returns'] = mean_returns
+            st.session_state['cov_matrix'] = cov_matrix
+            st.session_state['results'] = results
+            st.session_state['analysis_done'] = True
+        
         else:
             st.error("Failed to calculate returns from price data.")
     else:
         st.error("No valid price data retrieved. Check ticker symbols and date range.")
+
+# Check any changes in sidebar and update cache
+if sidebar_changed(tickers, start_date, end_date, risk_free_rate) and st.session_state.get('analysis_done'):
+    # Perform heavy computations, for example:
+    price_data = get_data(ticker_list, start=start_date, end=end_date)
+    if price_data is not None and not price_data.empty:
+        returns = get_return(price_data)
+        if returns is not None:
+            mean_returns, cov_matrix = returns
+            results = calculated_result(mean_returns, cov_matrix, risk_free_rate, constraints_set)
+            # Save computed results to session_state for later use.
+            st.session_state['price_data'] = price_data
+            st.session_state['mean_returns'] = mean_returns
+            st.session_state['cov_matrix'] = cov_matrix
+            st.session_state['results'] = results
+            st.session_state['analysis_done'] = True
+
+# If analysis is done, display results and allow slider updates
+if st.session_state.get('analysis_done'): 
+    price_data = st.session_state['price_data']
+    mean_returns = st.session_state['mean_returns']
+    cov_matrix = st.session_state['cov_matrix']
+    results = st.session_state['results']
+
+    # Display optimization results
+    st.write("")
+    st.write("")
+    st.subheader("Optimization Results")
+    st.write("")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("##### Maximum Sharpe Ratio Portfolio (Highest Return/Risk Ratio)")
+        st.metric("Expected Return", f"{results['maxSR']['return_disp']:.2f}%")
+        st.metric("Volatility", f"{results['maxSR']['std_disp']:.2f}%")
+        st.metric(
+            "Expected Return Fluctuation Range", 
+            f"{(results['maxSR']['return_disp'] - results['maxSR']['std_disp']):.2f}% ~ {(results['maxSR']['return_disp'] + results['maxSR']['std_disp']):.2f}%")
+        st.write("")
+        st.write("**Allocations:**")
+        alloc_df = pd.DataFrame({
+            'Ticker': mean_returns.index,
+            'Weight': [f"{w:.1%}" for w in results['maxSR']['allocation']["Weightings"]]
+        })
+        st.dataframe(alloc_df, hide_index=True)
+        plot_portfolio(alloc_df['Ticker'], results['maxSR']['allocation']["Weightings"])\
+        
+    with col2:
+        st.markdown("##### Minimum Variance Portfolio (Lowest Volatility)")
+        st.metric("Expected Return", f"{results['minVar']['return_disp']:.2f}%")
+        st.metric("Volatility", f"{results['minVar']['std_disp']:.2f}%")
+        st.metric(
+            "Expected Return Fluctuation Range ", 
+            f"{(results['minVar']['return_disp'] - results['minVar']['std_disp']):.2f}% ~ {(results['minVar']['return_disp'] + results['minVar']['std_disp']):.2f}%")
+        st.write("")
+        st.write("**Allocations:**")
+        alloc_df = pd.DataFrame({
+            'Ticker': mean_returns.index,
+            'Weight': [f"{w:.1%}" for w in results['minVar']['allocation']["Weightings"]]
+        })
+        st.dataframe(alloc_df, hide_index=True)
+        plot_portfolio(alloc_df['Ticker'], results['minVar']['allocation']["Weightings"])
+    
+    # # Plot efficient frontier
+    # st.write("")
+    # st.subheader("Efficient Frontier")
+    # plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate, constraints_set)
+
+    # Return slider
+    st.write("")
+    st.subheader("Select Efficient Frontier Portfolio")
+    target_return_slider = st.slider(
+        "Target Return (%)",
+        min_value=results['minVar']['return_disp'],
+        max_value=results['maxSR']['return_disp'],
+        value=(results['minVar']['return_disp'] + results['maxSR']['return_disp']) / 2,
+        step=0.1
+    )
+    selected_target = target_return_slider / 100
+
+    # Display updated metrics
+    with st.spinner("Optimizing portfolio for selected target return..."):
+        new_portfolio = efficient_optimization(mean_returns, cov_matrix, selected_target, constraints_set)
+    new_weights = new_portfolio['x']
+    new_return = round(get_portfolio_return(new_weights, mean_returns, cov_matrix)*100, 2)
+    new_std = round(get_portfolio_variance(new_weights, mean_returns, cov_matrix)*100, 2)
+    
+    col3, col4 = st.columns(2)
+    with col3:
+        st.metric("Expected Return", f"{new_return:.2f}%")
+        st.metric("Volatility", f"{new_std:.2f}%")
+        st.metric(
+            "Expected Return Fluctuation Range ", 
+            f"{(new_return - new_std):.2f}% ~ {(new_return + new_std):.2f}%") 
+
+    with col4:
+        st.write("**Allocations:**")
+        alloc_df = pd.DataFrame({
+            'Ticker': mean_returns.index,
+            'Weight': [f"{w:.1%}" for w in new_weights]
+        })
+        st.dataframe(alloc_df, hide_index=True)
+
+    st.write("")
+    plot_portfolio(alloc_df['Ticker'], new_weights)
+
+    # Update efficient frontier plot
+    selected_point = {
+        "return": new_return,
+        "risk": new_std
+    }
+    st.write("")
+    st.subheader("Efficient Frontier with Selected Portfolio")
+    plot_efficient_frontier(mean_returns, cov_matrix, risk_free_rate, constraints_set, selected_point=selected_point)
+
+    # Define custom color scale for correlation matrix
+    custom_colorscale = [
+        [0.0, "#f1b3a1"], 
+        [0.5, "#e6e6e6"],  
+        [1.0, "#a6c9e7"]   
+    ]
+
+    # Plot asset correlation matrix
+    st.write("")
+    st.subheader("Asset Correlation Matrix")
+    get_correlation(price_data, color_scale=custom_colorscale)
+
+    # Show asset metrics
+    st.write("")
+    st.subheader("Asset Metrics")
+    metrics_df = get_asset_metrics(price_data, risk_free_rate=risk_free_rate, trading_days=365)
+    st.dataframe(metrics_df)
+
+    # Disclaimer warning
+    st.write("")
+    st.write("")
+    st.warning(
+        "**Disclaimer:** The results shown in this application are based on **historical data** and are intended for "
+        "informational purposes only. The **expected returns** are calculated using past performance, but **future performance** "
+        "may differ significantly. Market conditions, economic factors, and unforeseen events can impact actual returns. "
+        "Please consider this before making any investment decisions."
+    )
