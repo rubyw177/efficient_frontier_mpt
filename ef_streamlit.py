@@ -531,18 +531,18 @@ def plot_portfolio(tickers, weights):
     st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
 def sidebar_changed(tickers, start_date, end_date, risk_free_rate):
-    # Create a dictionary with current sidebar values.
+    # Create a dictionary with current sidebar values
     current_params = {
         "tickers": tickers,
         "start_date": str(start_date),
         "end_date": str(end_date),
         "risk_free_rate": risk_free_rate
     }
-    # If these values haven’t been stored before, save them.
+    # If these values haven’t been stored before, save them
     if "sidebar_params" not in st.session_state:
         st.session_state.sidebar_params = current_params
         return True  # first run, consider it a change
-    # Compare the stored parameters with the current ones.
+    # Compare the stored parameters with the current ones
     if st.session_state.sidebar_params != current_params:
         st.session_state.sidebar_params = current_params  # update the stored values
         return True
@@ -629,19 +629,24 @@ if st.button("Run Portfolio Analysis 🔍"):
 
 # Check any changes in sidebar and update cache
 if sidebar_changed(tickers, start_date, end_date, risk_free_rate) and st.session_state.get('analysis_done'):
-    # Perform heavy computations, for example:
     price_data = get_data(ticker_list, start=start_date, end=end_date)
     if price_data is not None and not price_data.empty:
         returns = get_return(price_data)
         if returns is not None:
             mean_returns, cov_matrix = returns
             results = calculated_result(mean_returns, cov_matrix, risk_free_rate, constraints_set)
+            
             # Save computed results to session_state for later use.
             st.session_state['price_data'] = price_data
             st.session_state['mean_returns'] = mean_returns
             st.session_state['cov_matrix'] = cov_matrix
             st.session_state['results'] = results
             st.session_state['analysis_done'] = True
+        
+        else:
+            st.error("Failed to calculate returns from price data.")
+    else:
+        st.error("No valid price data retrieved. Check ticker symbols and date range.")
 
 # If analysis is done, display results and allow slider updates
 if st.session_state.get('analysis_done'): 
@@ -728,7 +733,7 @@ if st.session_state.get('analysis_done'):
             'Weight': [f"{w:.1%}" for w in new_weights]
         })
         st.dataframe(alloc_df, hide_index=True)
-
+    
     st.write("")
     plot_portfolio(alloc_df['Ticker'], new_weights)
 
