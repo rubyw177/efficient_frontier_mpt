@@ -482,7 +482,7 @@ def plot_portfolio(tickers, weights):
         data_frame=alloc_df,
         values="Weight",
         names="Ticker",
-        title=f"Portfolio Allocation ({len(alloc_df[alloc_df['Weight'] != 0])} Assets)",
+        title=f"Portfolio Allocation ({len(alloc_df['Ticker'])} Assets)",
         hole=0.3,  # Donut chart style
         color_discrete_sequence=px.colors.qualitative.Pastel,
         hover_data={"Weight": ":.1f%"},
@@ -555,7 +555,7 @@ with st.sidebar:
             "Minimum Weight (%)",
             min_value=0.0,
             max_value=10.0,
-            value=0.0,
+            value=2.0,
             step=1.0,
             format="%.1f"
         ) / 100
@@ -643,6 +643,16 @@ if st.button("Run Portfolio Analysis 🔍"):
             st.subheader("Asset Metrics")
             metrics_df = get_asset_metrics(price_data, risk_free_rate=risk_free_rate, trading_days=365)
             st.dataframe(metrics_df)
+
+            # Disclaimer warning
+            st.write("")
+            st.write("")
+            st.warning(
+                "**Disclaimer:** The results shown in this application are based on **historical data** and are intended for "
+                "informational purposes only. The **expected returns** are calculated using past performance, but **future performance** "
+                "may differ significantly. Market conditions, economic factors, and unforeseen events can impact actual returns. "
+                "Please consider this before making any investment decisions."
+            )
 
         else:
             st.error("Failed to calculate returns from price data.")
