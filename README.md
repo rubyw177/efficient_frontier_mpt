@@ -109,6 +109,7 @@ Open your web browser and go to the URL printed in the terminal (usually http://
 - **ef_streamlit.py**: Main Streamlit application. Handles user input, data retrieval, portfolio optimization, and chart plotting.
 - **ef_test.ipynb**: Jupyter Notebook (if applicable) for testing functions and experimenting with the portfolio optimization code.
 - **logowk.svg**: Sample logo image referenced in the Streamlit sidebar.
+- **requirements.txt**: Text file that contains all required libraries.
 
 Feel free to adapt or remove these files to fit your project’s structure.
 
