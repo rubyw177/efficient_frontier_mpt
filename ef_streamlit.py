@@ -762,7 +762,7 @@ if st.session_state.get('analysis_done'):
     st.write("")
     st.subheader("Asset Metrics")
     metrics_df = get_asset_metrics(price_data, risk_free_rate=risk_free_rate, trading_days=365)
-    st.dataframe(metrics_df)
+    st.dataframe(metrics_df, use_container_width=True)
 
     # Disclaimer warning
     st.write("")
